@@ -327,7 +327,7 @@ static int model_phw(gtime_t time, int sat, const char *type, int opt,
 static double varerr(int sat, int sys, double el, int freq, int type,
                      const prcopt_t *opt)
 {
-	// Ô­À´µÄËæ»úÄ£ÐÍ
+	// Ô­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½ï¿½
     double fact=1.0,sinel=sin(el);
     
     if (type==1) fact*=opt->eratio[freq==0?0:1];
@@ -342,7 +342,7 @@ static double varerr(int sat, int sys, double el, int freq, int type,
 	if (sinel>=0.5) return SQR(fact*opt->err[1])+SQR(fact*opt->err[2]*2);
 	else return SQR(fact*opt->err[1])+SQR(fact*opt->err[2]/sinel);
 
-	// ²ÎÔÄGAMPµÄËæ»úÄ£ÐÍ
+	// ï¿½ï¿½ï¿½ï¿½GAMPï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½ï¿½
 	//double a=opt->err[1],b=opt->err[2];
 	//double c=1.0,fact=1.0;
 	//double sinel=sin(el);
@@ -354,7 +354,7 @@ static double varerr(int sat, int sys, double el, int freq, int type,
 	//	fact=EFACT_GLO;
 	//	if (type) c=100;
 	//}
-	//else if (sys==SYS_CMP) {
+	//else if (sys==SYS_BDS) {
 	//	if (type) c=500;
 	//}
 	//else if (sys==SYS_GAL) {
@@ -367,7 +367,7 @@ static double varerr(int sat, int sys, double el, int freq, int type,
 	//if (opt->ionoopt==IONOOPT_IFLC) fact*=3.0;
 
  //   return SQR(fact*c)*(SQR(a)+SQR(b/sinel));
-	/*PANDA Èí¼þµÄËæ»úÄ£ÐÍÈ·¶¨·½·¨*/
+	/*PANDA ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
 	//if (el*R2D>=30) return SQR(fact*c)*SQR(a);
 	//else return SQR(fact*c)*SQR(a)/(4*SQR(sinel));
 }
@@ -384,7 +384,7 @@ static void initx(rtk_t *rtk, double xi, double var, int i)
 static double gfmeas(const obsd_t *obs, const nav_t *nav)
 {
     const double *lam=nav->lam[obs->sat-1];
-    int i=(satsys(obs->sat,NULL)&(SYS_GAL|SYS_SBS|SYS_CMP))?2:1;
+    int i=(satsys(obs->sat,NULL)&(SYS_GAL|SYS_SBS|SYS_BDS))?2:1;
     
     if (lam[0]==0.0||lam[i]==0.0||obs->L[0]==0.0||obs->L[i]==0.0) return 0.0;
     return lam[0]*obs->L[0]-lam[i]*obs->L[i];
@@ -393,7 +393,7 @@ static double gfmeas(const obsd_t *obs, const nav_t *nav)
 static double mwmeas(const obsd_t *obs, const nav_t *nav)
 {
 	const double *lam=nav->lam[obs->sat-1]; 
-    int i=(satsys(obs->sat,NULL)&(SYS_GAL|SYS_SBS|SYS_CMP))?2:1;
+    int i=(satsys(obs->sat,NULL)&(SYS_GAL|SYS_SBS|SYS_BDS))?2:1;
 	double P[3]={0},C1,C2;
 
     if (lam[0]==0.0||lam[i]==0.0||obs->L[0]==0.0||obs->L[i]==0.0||
@@ -448,12 +448,12 @@ static void corr_meas(const obsd_t *obs, const nav_t *nav, const double *azel,
     *Lc=*Pc=0.0;
     sys=satsys(obs->sat,NULL);
 
-	i=(sys&(SYS_GAL|SYS_SBS|SYS_CMP))?2:1; /* L1/L2 or L1/L5 */
+	i=(sys&(SYS_GAL|SYS_SBS|SYS_BDS))?2:1; /* L1/L2 or L1/L5 */
     if (lam[0]==0.0||lam[i]==0.0) return;
     if (fabs(obs->P[0]-obs->P[i])>30) return;
 
 	/* BDS2 code pseudorange multipath*/
-	if (sys == SYS_CMP && P[0]!=0.0 && P[i]!=0.0) {
+	if (sys == SYS_BDS && P[0]!=0.0 && P[i]!=0.0) {
 		BDmultipath(obs, azel[1], dmp);
 		P[0] += dmp[0];
 		P[i] += dmp[i];
@@ -495,7 +495,7 @@ static void detslp_gf(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     
     trace(3,"detslp_gf: n=%d\n",n);
 
-    /*¸ù¾Ý²ÉÑùÆµÂÊÉèÖÃThreshold£¬²Î¿¼GAMP*/
+    /*ï¿½ï¿½ï¿½Ý²ï¿½ï¿½ï¿½Æµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Thresholdï¿½ï¿½ï¿½Î¿ï¿½GAMP*/
 	for (i=0;i<n&&i<MAXOBS;i++){
 		tt[i]=timediff(obs[i].time,rtk->ssat[obs[i].sat-1].pt[1][0]);
 	}
@@ -538,7 +538,7 @@ static void detslp_mw(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     
     trace(3,"detslp_mw: n=%d\n",n);
 
-	/*¸ù¾Ý²ÉÑùÆµÂÊÉèÖÃThreshold£¬²Î¿¼GAMP*/
+	/*ï¿½ï¿½ï¿½Ý²ï¿½ï¿½ï¿½Æµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Thresholdï¿½ï¿½ï¿½Î¿ï¿½GAMP*/
 	for (i=0;i<n&&i<MAXOBS;i++){
 		tt[i]=timediff(obs[i].time,rtk->ssat[obs[i].sat-1].pt[1][0]);
 	}
@@ -652,7 +652,7 @@ static void udclk_ppp(rtk_t *rtk)
 {
     double dtr;
     int i;
-	const int sys[]={SYS_GPS,SYS_GLO,SYS_GAL,SYS_CMP,SYS_QZS,SYS_IRN,SYS_LEO};
+	const int sys[]={SYS_GPS,SYS_GLO,SYS_GAL,SYS_BDS,SYS_QZS,SYS_IRN,SYS_LEO};
 
     trace(3,"udclk_ppp:\n");
     
@@ -669,7 +669,7 @@ static void udclk_ppp(rtk_t *rtk)
 		if(i&&fabs(rtk->sol.dtr[i])<1.0e-16&&!(sys[i]&rtk->opt.navsys)) dtr=0;// dtr
         initx(rtk,CLIGHT*dtr,VAR_CLK,IC(i,&rtk->opt));
     }
-/*--------------------------Ô­Ê¼´úÂë--------------------------*/
+/*--------------------------Ô­Ê¼ï¿½ï¿½ï¿½ï¿½--------------------------*/
 	//for (i=0;i<NSYS;i++) { 
 	//		dtr=rtk->sol.dtr[i];
 	//		if(fabs(dtr)<1.0e-16) dtr=0;
@@ -1051,7 +1051,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     double var[MAXOBS*2],dtrp=0.0,dion=0.0,vart=0.0,vari=0.0,dcb;
     double dantr[NFREQ]={0},dants[NFREQ]={0};
     double ve[MAXOBS*2*NFREQ]={0},vmax=0;
-    char str[32]; char s[64];/*ÎªÁËÊä³öµçÀë²ã²Ð²î¶¨Òå*/
+    char str[32]; char s[64];/*Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð²î¶¨ï¿½ï¿½*/
     int ne=0,obsi[MAXOBS*2*NFREQ]={0},frqi[MAXOBS*2*NFREQ],maxobs,maxfrq,rej;
     int i,j,k,sat,sys,nv=0,nx=rtk->nx,stat=1,week=0;
     
@@ -1105,7 +1105,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
             if (opt->ionoopt==IONOOPT_IFLC) {
                 if ((y=j%2==0?Lc:Pc)==0.0) continue;
             }
-            else {//ÕâÀïÐèÒªÐÞ¸Ä£¬¿¼ÂÇGAL E5aÔÚµÚÈý¸ö´æ´¢µÄÎ»ÖÃ
+            else {//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½Þ¸Ä£ï¿½ï¿½ï¿½ï¿½ï¿½GAL E5aï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æ´¢ï¿½ï¿½Î»ï¿½ï¿½
                 if(sys==1)
 				{if ((y=j%2==0?L[j/2]:P[j/2])==0.0) continue;}
 				else
@@ -1118,13 +1118,13 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
             }
             if(sys==1)C=SQR(lam[j/2]/lam[0])*ionmapf(pos,azel+i*2)*(j%2==0?-1.0:1.0);
 			else
-			{ if(j<=1)C=SQR(lam[j/2]/lam[0])*ionmapf(pos,azel+i*2)*(j%2==0?-1.0:1.0);//ÐÞ¸Ä by Yin
+			{ if(j<=1)C=SQR(lam[j/2]/lam[0])*ionmapf(pos,azel+i*2)*(j%2==0?-1.0:1.0);//ï¿½Þ¸ï¿½ by Yin
 			  else C=SQR(lam[2]/lam[0])*ionmapf(pos,azel+i*2)*(j%2==0?-1.0:1.0);}
             
             for (k=0;k<nx;k++) H[k+nx*nv]=k<3?-e[k]:0.0;
             
             /* receiver clock */
-            k=sys==SYS_GLO?1:(sys==SYS_GAL?2:(sys==SYS_CMP?3:0));
+            k=sys==SYS_GLO?1:(sys==SYS_GAL?2:(sys==SYS_BDS?3:0));
             cdtr=x[IC(k,opt)];
             H[IC(k,opt)+nx*nv]=1.0;
             
@@ -1259,14 +1259,14 @@ extern int ppprtk_res(const obsd_t *obs, int n, const nav_t *nav,rtk_t *rtk,aug_
                   rtk->ssat[sat-1].phw,L,P,&Lc,&Pc);
 
 		/* receiver clock */
-         k=sys==SYS_GLO?1:(sys==SYS_GAL?2:(sys==SYS_CMP?3:0));
+         k=sys==SYS_GLO?1:(sys==SYS_GAL?2:(sys==SYS_BDS?3:0));
          cdtr=x[IC(k,opt)];
         
 		/* satellite DCB correction */
 		P1_P2 = nav->cbias[sat - 1][0];
 
 		j = 1;//GPS
-		if (sys&(SYS_GAL|SYS_SBS|SYS_CMP)) j=2;
+		if (sys&(SYS_GAL|SYS_SBS|SYS_BDS)) j=2;
 		gamma=SQR(lam[j])/SQR(lam[0]);
 		dcb = P1_P2 / (1.0 - gamma);
 
@@ -1347,7 +1347,7 @@ extern int gen_L4(const obsd_t *obs, int n, const nav_t *nav,rtk_t *rtk,aug_t *A
                   rtk->ssat[sat-1].phw,L,P,&Lc,&Pc);
 		
 		j = 1;//GPS
-		if (sys&(SYS_GAL|SYS_SBS|SYS_CMP)) j=2;
+		if (sys&(SYS_GAL|SYS_SBS|SYS_BDS)) j=2;
 
 		AUG[sat-1].L4 = L[0]-L[j];
     }
@@ -1399,7 +1399,7 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
     rtk->sol.dtr[1]=rtk->x[IC(1,opt)]-rtk->x[IC(0,opt)];
     rtk->sol.qv[0]=rtk->x[IT(&rtk->opt)];
     for (i=0;i<n&&i<MAXOBS;i++) for (j=0;j<opt->nf;j++) {
-        rtk->ssat[obs[i].sat-1].snr[j]=obs[i].SNR[j];
+        rtk->ssat[obs[i].sat-1].snr_rover[j]=obs[i].SNR[j];
     }
     for (i=0;i<MAXSAT;i++) for (j=0;j<opt->nf;j++) {
         if (rtk->ssat[i].slip[j]&3) rtk->ssat[i].slipc[j]++;
@@ -1439,7 +1439,7 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     int i,j,nv,info,svh[MAXOBS],exc[MAXOBS]={0},stat=SOLQ_SINGLE;
 
 	int sat,index=0,flag=0;double ep[6]={0.0},LC,MW,QQ,secofday,lam_mw;
-	const double *L_WAVE;//Êä³ö¼ÆËãUPDµÄÖÐ¼äÎÄ¼þ
+	const double *L_WAVE;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½UPDï¿½ï¿½ï¿½Ð¼ï¿½ï¿½Ä¼ï¿½
 
     time2str(obs[0].time,str,2);
     trace(2,"pppos   : time=%s nx=%d n=%d\n",str,rtk->nx,n);
@@ -1495,7 +1495,7 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
         //trace(2,"%s ppp (%d) iteration overflows\n",str,i);
     }
 
-	// Êä³öÓÃÓÚUPD¹À¼ÆµÄÖÐ¼äÎÄ¼þ
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½UPDï¿½ï¿½ï¿½Æµï¿½ï¿½Ð¼ï¿½ï¿½Ä¼ï¿½
  //   for (i=0;i<n&&i<MAXOBS;i++) {
 	//sat=obs[i].sat;time2epoch(rtk->sol.time,ep);
 	//  if (rtk->ssat[sat-1].vsat[0]==1&&satsys(sat,NULL)==32) {
@@ -1518,7 +1518,7 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
 	//	}
 	//	QQ=rtk->P[index+index*rtk->nx];
 	//	secofday=ep[5]+ep[4]*60+ep[3]*3600;
- //       if(satsys(sat,NULL)==SYS_CMP)trace(2,"%-6.0f%-3dAC %-3dMW %-13.5fLC %-13.5fnQ %-3dQ %9.8f\n",secofday,sat-114,rtk->ssat[sat-1].slipc[0],MW,LC,flag,QQ);
+ //       if(satsys(sat,NULL)==SYS_BDS)trace(2,"%-6.0f%-3dAC %-3dMW %-13.5fLC %-13.5fnQ %-3dQ %9.8f\n",secofday,sat-114,rtk->ssat[sat-1].slipc[0],MW,LC,flag,QQ);
  //       else trace(2,"%-6.0f%-3dAC %-3dMW %-13.5fLC %-13.5fnQ %-3dQ %9.8f\n",secofday,sat,rtk->ssat[sat-1].slipc[0],MW,LC,flag,QQ);
  //           //if(sat==120) trace(2,"%-6.0f%-3d%-13.5f%-6.3f\n",secofday,sat,MW, rtk->ssat[119].azel[1]*R2D);
 	//   }
@@ -1537,7 +1537,7 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
 			{
 				if (pppamb(rtk,obs,n,nav,azel,exc)) {
 
-     				matcpy(rtk->x, xp, rtk->nx, 1); // ´«µÝ¸¡µãÐ­·½²îÕó
+     				matcpy(rtk->x, xp, rtk->nx, 1); // ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½ï¿½Ð­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 					matcpy(rtk->P,Pp,rtk->nx,rtk->nx);
 
 					for (i=0;i<3;i++) std[i] = sqrt(rtk->Pa[i+i*rtk->nx]);

@@ -50,7 +50,7 @@ static eph_t *seleph(gtime_t time, int sat, int iode, const nav_t *nav)
 	case SYS_GPS: tmax=MAXDTOE+1.0    ; sel=eph_sel[0]; break;
 	case SYS_GAL: tmax=MAXDTOE_GAL    ; sel=eph_sel[2]; break;
 	case SYS_QZS: tmax=MAXDTOE_QZS+1.0; sel=eph_sel[3]; break;
-	case SYS_CMP: tmax=MAXDTOE_CMP+1.0; sel=eph_sel[4]; break;
+	case SYS_BDS: tmax=MAXDTOE_BDS+1.0; sel=eph_sel[4]; break;
 	default: tmax=MAXDTOE+1.0; break;
 	}
 	tmin=tmax+1.0;
@@ -189,7 +189,7 @@ static double prange(const obsd_t *obs, const nav_t *nav, const double *azel,
     if (!(sys=satsys(obs->sat,NULL))) return 0.0;
     
     /* L1-L2 for GPS/GLO/QZS, L1-L5 for GAL/SBS */
-    if (NFREQ>=3&&(sys&(SYS_GAL|SYS_SBS|SYS_CMP))) j=2;
+    if (NFREQ>=3&&(sys&(SYS_GAL|SYS_SBS|SYS_BDS))) j=2;
     
     if (NFREQ<2||lam[i]==0.0||lam[j]==0.0) return 0.0;
 
@@ -226,7 +226,7 @@ static double prange(const obsd_t *obs, const nav_t *nav, const double *azel,
         if (obs->code[i]==CODE_L1C) P1+=P1_C1; /* C1->P1 */
         if (obs->code[j]==CODE_L2C) P2+=P2_C2; /* C2->P2 */
         
-        if (sys&(SYS_CMP)) {/* Code Pseudorange Multipath Correct*/
+        if (sys&(SYS_BDS)) {/* Code Pseudorange Multipath Correct*/
             BDmultipath(obs,azel[1],dmp);
             P1+= dmp[0];
             P2+= dmp[j];
@@ -238,7 +238,7 @@ static double prange(const obsd_t *obs, const nav_t *nav, const double *azel,
         
         if (P1==0.0) return 0.0;
         if (obs->code[i]==CODE_L1C) P1+=P1_C1; /* C1->P1 */
-        if (sys&(SYS_CMP)) {
+        if (sys&(SYS_BDS)) {
             BDmultipath(obs,azel[1],dmp);
             P1+= dmp[0];
         };
@@ -246,8 +246,8 @@ static double prange(const obsd_t *obs, const nav_t *nav, const double *azel,
     }
     if (opt->sateph==EPHOPT_SBAS) PC-=P1_C1; /* sbas clock based C1 */
 
-	/*BDSÊý¾Ý´¦ÀíÊ±£¬B1I¡¢B2IÐèÒªTGD¸ÄÕýµ½B3I*/
-	if (P1_P2==0.0&&(sys&(SYS_CMP))) {
+	/*BDSï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½Ê±ï¿½ï¿½B1Iï¿½ï¿½B2Iï¿½ï¿½ÒªTGDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½B3I*/
+	if (P1_P2==0.0&&(sys&(SYS_BDS))) {
 		if(opt->mode==0){
 			if(opt->ionoopt==IONOOPT_IFLC){
                 P1_P2=gamma*gettgd(obs->sat,nav)/(gamma-1);
@@ -415,7 +415,7 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
         }
 
 		/* BDS adop LC */
-		//if (sys==SYS_CMP&&opt->mode!=0) dion=0.0;
+		//if (sys==SYS_BDS&&opt->mode!=0) dion=0.0;
 
         /* pseudorange residual */
         v[nv]=P-(r+dtr-CLIGHT*dts[i*2]+dion+dtrp);
@@ -429,7 +429,7 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
         /* time system and receiver bias offset correction */
         if      (sys==SYS_GLO) {v[nv]-=x[4]; H[4+nv*NX]=1.0; mask[1]=1;}
         else if (sys==SYS_GAL) {v[nv]-=x[5]; H[5+nv*NX]=1.0; mask[2]=1;}
-        else if (sys==SYS_CMP) {v[nv]-=x[6]; H[6+nv*NX]=1.0; mask[3]=1;}
+        else if (sys==SYS_BDS) {v[nv]-=x[6]; H[6+nv*NX]=1.0; mask[3]=1;}
         else mask[0]=1;
         
         vsat[i]=1; resp[i]=v[nv]; (*ns)++;
@@ -665,21 +665,21 @@ static int resdop(int iter,const obsd_t *obs, int n, const double *rs, const dou
                                       rs[3+i*6]*rr[1]-rs[  i*6]*x[1]);
         
 /*------------------------------------------------------------------------------------*/
-		/* doppler residual£¬²»¼ÓÈÎºÎ¸ÄÕýµÄÊ±ºò */
+		/* doppler residualï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÎºÎ¸ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ */
         /*v[nv]=-lam*obs[i].D[0]-(rate+x[3]-CLIGHT*dts[1+i*2]);*/
 
 /*------------------------------------------------------------------------------------*/
-		/*¿¼ÂÇ¼¶ÊýÕ¹¿ªµÄ¶þ´ÎÏîÓ°ÏìµÄ°ì·¨*/
-		Vs=0.5*(SQR(rs[3+i*6])+SQR(rs[4+i*6])+SQR(rs[5+i*6]))/CLIGHT;/*ÎÀÐÇËÙ¶ÈV^2*/
+		/*ï¿½ï¿½ï¿½Ç¼ï¿½ï¿½ï¿½Õ¹ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½Ä°ì·¨*/
+		Vs=0.5*(SQR(rs[3+i*6])+SQR(rs[4+i*6])+SQR(rs[5+i*6]))/CLIGHT;/*ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½V^2*/
         v[nv]=-lam*obs[i].D[0]-(rate+x[3]-CLIGHT*dts[1+i*2]+0.5*Vs/CLIGHT);
 	   //if(obs[i].sat<=35)v[nv]=-lam*obs[i].D[0]-(rate+x[3]-CLIGHT*dts[1+i*2]+0.5*Vs/CLIGHT);
 	   //else v[nv]=-lam*obs[i].D[0]-(rate+x[4]-CLIGHT*dts[1+i*2]+0.5*Vs/CLIGHT);
 /*------------------------------------------------------------------------------------*/
-		/*¿¼ÂÇË«ÆµÏû³ýµçÀë²ãÓ°ÏìµÄ°ì·¨*/
+		/*ï¿½ï¿½ï¿½ï¿½Ë«Æµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½Ä°ì·¨*/
 		//C1=1.64694;//f1^2/f2^2	
 		//v[nv]=-(C1*lam*obs[i].D[0]-sqrt(C1*lam*lam)*obs[i].D[1])/(C1-1)-(rate+x[3]-CLIGHT*dts[1+i*2]+0.5*Vs/CLIGHT);
 /*------------------------------------------------------------------------------------*/
-		/*¿¼ÂÇ¶ÔÁ÷²ãÑÓ³Ù±ä»¯Ó°ÏìµÄ°ì·¨*/
+		/*ï¿½ï¿½ï¿½Ç¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó³Ù±ä»¯Ó°ï¿½ï¿½Ä°ì·¨*/
 		//if (tropcorr(obs[i].time,nav,pos,azel+i*2,TROPOPT_SAAS,&dtrp,&vtrp))
 		//{
 		//	dtrp=dtrp*cos(PI-azel[1+2*i]);
@@ -687,7 +687,7 @@ static int resdop(int iter,const obsd_t *obs, int n, const double *rs, const dou
 		//}
 		//v[nv]=-lam*obs[i].D[0]-(rate+x[3]-CLIGHT*dts[1+i*2]+Vs+abs(dtrp));
 /*------------------------------------------------------------------------------------*/
-		/*¿¼ÂÇ·ÇÔ²¹ìµÀ¸ÄÕýÓ°ÏìµÄ°ì·¨£¬Õâ¸ö°ì·¨²»ÊÇºÜºÃ£¬Ö±½ÓÔÚÖÓ²î¸ÄÕý±È½ÏºÃ*/
+		/*ï¿½ï¿½ï¿½Ç·ï¿½Ô²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½Ä°ì·¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ì·¨ï¿½ï¿½ï¿½ÇºÜºÃ£ï¿½Ö±ï¿½ï¿½ï¿½ï¿½ï¿½Ó²ï¿½ï¿½ï¿½ï¿½ï¿½È½Ïºï¿½*/
 		//if (!(eph=seleph(obs[0].time,obs[i].sat,-1,nav))) return 0;
 		//if (obs[i].sat == eph->sat)
 		//{decc=(2*3.986004415E+14)/CLIGHT*( 1/eph->A-1/(SQR(rs[0+i*6])+SQR(rs[1+i*6])+SQR(rs[2+i*6])));}
@@ -748,19 +748,19 @@ static int resdopp(int iter,const obsd_t *obs, int n, const double *rs, const do
 			rs[3+i*6]*rr[1]-rs[  i*6]*x[1]);
 
 		/*------------------------------------------------------------------------------------*/
-		/* doppler residual£¬²»¼ÓÈÎºÎ¸ÄÕýµÄÊ±ºò */
+		/* doppler residualï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÎºÎ¸ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ */
 		/*v[nv]=-lam*obs[i].D[0]-(rate+x[3]-CLIGHT*dts[1+i*2]);*/
 
 		/*------------------------------------------------------------------------------------*/
-		/*¿¼ÂÇ¼¶ÊýÕ¹¿ªµÄ¶þ´ÎÏîÓ°ÏìµÄ°ì·¨*/
-		Vs=0.5*(SQR(rs[3+i*6])+SQR(rs[4+i*6])+SQR(rs[5+i*6]))/CLIGHT;/*ÎÀÐÇËÙ¶ÈV^2*/
+		/*ï¿½ï¿½ï¿½Ç¼ï¿½ï¿½ï¿½Õ¹ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½Ä°ì·¨*/
+		Vs=0.5*(SQR(rs[3+i*6])+SQR(rs[4+i*6])+SQR(rs[5+i*6]))/CLIGHT;/*ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½V^2*/
 		v[nv]=-lam*obs[i].D[0]-(rate+x[3]-CLIGHT*dts[1+i*2]+0.5*Vs/CLIGHT);
 
 		snr=obs[i].SNR[0]/4;
-		//Êä³öÊ±¿Ì ÎÀÐÇ ¸ÄÕýºó¶àÆÕÀÕ ÎÀÐÇÈýÎ¬ËÙ¶È
+		//ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¬ï¿½Ù¶ï¿½
 		//if (iter==1&&snr>30) {
 		//	trace(2,"%s %3d %12.3f %12.3f %12.3f %12.3f\n",time_str(obs[i].time,3),obs[i].sat,-lam*obs[i].D[0]+CLIGHT*dts[1+i*2]
-		//		,(rs+i*6)[3],(rs+i*6)[4],(rs+i*6)[5]);//Êä³ö¹Û²âÖµ£¬ÒÔ±ãMatlab´¦Àí
+		//		,(rs+i*6)[3],(rs+i*6)[4],(rs+i*6)[5]);//ï¿½ï¿½ï¿½ï¿½Û²ï¿½Öµï¿½ï¿½ï¿½Ô±ï¿½Matlabï¿½ï¿½ï¿½ï¿½
 		//}
 
 
@@ -775,7 +775,7 @@ static int resdopp(int iter,const obsd_t *obs, int n, const double *rs, const do
 			var[nv]=var[nv]+SQR(1);
 			}
 	
-		//--------ÕâÀïÊä³öNLOS/MP-------
+		//--------ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NLOS/MP-------
 		//if (iter==0&&(fabs(x[0])+fabs(x[1])+fabs(x[2]))>0) {
 		//	trace(2,"%s %3d %4.1f %7.3f\n",time_str(obs[i].time,3),obs[i].sat,
 		//		azel[1+i*2]*R2D,v[nv]);
@@ -825,14 +825,14 @@ static int resdopp_post(const obsd_t *obs, int n, const double *rs, const double
 			rs[3+i*6]*rr[1]-rs[  i*6]*x[1]);
 
 		/*------------------------------------------------------------------------------------*/
-		/* doppler residual£¬²»¼ÓÈÎºÎ¸ÄÕýµÄÊ±ºò */
+		/* doppler residualï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÎºÎ¸ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ */
 		/*v[nv]=-lam*obs[i].D[0]-(rate+x[3]-CLIGHT*dts[1+i*2]);*/
 
 		/*------------------------------------------------------------------------------------*/
-		/*ÎÀÐÇËÙ¶ÈV^2*/
+		/*ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½V^2*/
 		Vs=0.5*(SQR(rs[3+i*6])+SQR(rs[4+i*6])+SQR(rs[5+i*6]))/CLIGHT;
-		/*¿¼ÂÇË«ÆµÏû³ýµçÀë²ãÓ°Ïì*/
-	 //   C1=1.79327;//E1¡¢E5a£¬C1=1.64694;//f1^2/f2^2	
+		/*ï¿½ï¿½ï¿½ï¿½Ë«Æµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½*/
+	 //   C1=1.79327;//E1ï¿½ï¿½E5aï¿½ï¿½C1=1.64694;//f1^2/f2^2	
 		//v[nv]=-(C1*lam*obs[i].D[0]-sqrt(C1*lam*lam)*obs[i].D[2])/(C1-1)-(rate+x[3]-CLIGHT*dts[1+i*2]+0.5*Vs/CLIGHT);
 		
 		v[nv]=-lam*obs[i].D[0]-(rate+x[3]-CLIGHT*dts[1+i*2]+0.5*Vs/CLIGHT);
@@ -864,7 +864,7 @@ static void estvel(obsd_t *obs, int n, const double *rs, const double *dts,
     trace(3,"estvel  : n=%d\n",n);
 	for(i=0;i<3;i++)x[i]=sol->rr[3+i];
 /*------------------------------------------------------------------------------------*/
-	/*Ç°ºóÁ½¸öÀúÔª¹¹Ôìµ¼³ö¶àÆÕÀÕ¹Û²âÖµ*/
+	/*Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ôªï¿½ï¿½ï¿½ìµ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¹Û²ï¿½Öµ*/
 	for(i=0;i<n;i++)for(j=0;j<1;j++){//NFREQ
 		tt=timediff(obs[i].time,ssat[obs[i].sat-1].pt[1][j]);
 		if (ssat[obs[i].sat-1].slip[j]==1||ssat[obs[i].sat-1].ph[1][j]==0||fabs(tt)> 1|| obs[i].L[j] == 0 )
@@ -917,7 +917,7 @@ static void estvel(obsd_t *obs, int n, const double *rs, const double *dts,
 //    
 //    trace(3,"estvel  : n=%d\n",n);
 ///*------------------------------------------------------------------------------------*/
-//	/*Ç°ºóÁ½¸öÀúÔª¹¹Ôìµ¼³ö¶àÆÕÀÕ¹Û²âÖµ*/
+//	/*Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ôªï¿½ï¿½ï¿½ìµ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¹Û²ï¿½Öµ*/
 //	for (i = 0; i < n; i++)for (j = 0; j < NFREQ; j++) {
 //		tt = timediff(obs[i].time, ssat[obs[i].sat - 1].pt[1][j]);
 //		if (ssat[obs[i].sat - 1].slip[j] == 1 || ssat[obs[i].sat - 1].ph[1][j] == 0 || fabs(tt) > 1 || obs[i].L[j] == 0)
@@ -991,11 +991,11 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
     
     sol->time=obs[0].time; msg[0]='\0';	
 
-	//µ÷ÊÔÊ±£¬ÏÔÊ¾µ±Ç°µÄÄêÔÂÈÕÊ±¼ä
+	//ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 	time2epoch(sol->time,ep); 
 	if (ep[3]==5&&ep[4]==2&&fabs(ep[5]-2)<=0.1)
 	{
-		trace(3,"µ÷ÊÔÊ±»»³ÉUTCÄêÔÂÈÕ±íÊ¾ÒÔ±ã¶Ô±È");
+		trace(3,"ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½UTCï¿½ï¿½ï¿½ï¿½ï¿½Õ±ï¿½Ê¾ï¿½Ô±ï¿½Ô±ï¿½");
 	}
 
 	rs=mat(6,n); dts=mat(2,n); var=mat(1,n); azel_=zeros(2,n); resp=mat(1,n);
@@ -1020,12 +1020,12 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
     }
 
 /*------------------------------------------------------------------------------------*/
-    /* estimate receiver velocity with doppler£¬Ô­Ê¼µÄÀûÓÃÔ­Ê¼¶àÆÕÀÕ¹Û²âÖµÇó½âµÄ³ÌÐò */
+    /* estimate receiver velocity with dopplerï¿½ï¿½Ô­Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô­Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½Õ¹Û²ï¿½Öµï¿½ï¿½ï¿½Ä³ï¿½ï¿½ï¿½ */
     //if (stat) estvel(obs,n,rs,dts,nav,&opt_,sol,azel_,vsat);
 
-   /*estimate receiver velocity with differential carrier phase,ÔØ²¨ÏàÎ»²î·Ö·¨²âËÙ*/
+   /*estimate receiver velocity with differential carrier phase,ï¿½Ø²ï¿½ï¿½ï¿½Î»ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½*/
 	satpossDopp(sol->time,obs,n,nav,opt_.sateph,rs,dts,var,svh);
-	if (stat) estvel(obs,n,rs,dts,nav,&opt_,sol,azel_,svh,ssat);//ÐÞ¸Ävsat->svh
+	if (stat) estvel(obs,n,rs,dts,nav,&opt_,sol,azel_,svh,ssat);//ï¿½Þ¸ï¿½vsat->svh
 /*------------------------------------------------------------------------------------*/
 
     if (azel) {
@@ -1036,12 +1036,12 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
             ssat[i].vs=0;
             ssat[i].azel[0]=ssat[i].azel[1]=0.0;
             ssat[i].resp[0]=ssat[i].resc[0]=0.0;
-            ssat[i].snr[0]=0;
+            ssat[i].snr_rover[0]=0;
         }
         for (i=0;i<n;i++) {
             ssat[obs[i].sat-1].azel[0]=azel_[  i*2];
             ssat[obs[i].sat-1].azel[1]=azel_[1+i*2];
-            ssat[obs[i].sat-1].snr[0]=obs[i].SNR[0];
+            ssat[obs[i].sat-1].snr_rover[0]=obs[i].SNR[0];
             if (!vsat[i]) continue;
             ssat[obs[i].sat-1].vs=1;
             ssat[obs[i].sat-1].resp[0]=resp[i];

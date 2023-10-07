@@ -433,20 +433,40 @@ static void decodefile(rtksvr_t *svr, int index)
         rtksvrunlock(svr);
     }
 }
-/* carrier-phase bias (fcb) correction ---------------------------------------*/
-static void corr_phase_bias(obsd_t *obs, int n, const nav_t *nav)
+// /* carrier-phase bias (fcb) correction ---------------------------------------*/
+// static void corr_phase_bias(obsd_t *obs, int n, const nav_t *nav)
+// {
+//     double lam;
+//     int i,j,code;
+
+//     for (i=0;i<n;i++) for (j=0;j<NFREQ;j++) {
+
+//         if (!(code=obs[i].code[j])) continue;
+//         if ((lam=nav->lam[obs[i].sat-1][j])==0.0) continue;
+
+//         /* correct phase bias (cyc) */
+//         obs[i].L[j]-=nav->ssr[obs[i].sat-1].pbias[code-1]/lam;
+//     }
+// }
+/* carrier-phase bias correction by ssr --------------------------------------*/
+static void corr_phase_bias_ssr(obsd_t *obs, int n, const nav_t *nav)
 {
     double lam;
     int i,j,code;
+    
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < NFREQ; j++) {
 
-    for (i=0;i<n;i++) for (j=0;j<NFREQ;j++) {
+            if (!(code = obs[i].code[j])) continue;
+            if ((lam = nav->lam[obs[i].sat - 1][j]) == 0.0) continue;
 
-        if (!(code=obs[i].code[j])) continue;
-        if ((lam=nav->lam[obs[i].sat-1][j])==0.0) continue;
+            /* correct phase bias (cyc) */
+            obs[i].L[j] -= nav->ssr[obs[i].sat - 1].pbias[code - 1] / lam;
+            obs[i].P[j] -= nav->ssr[obs[i].sat - 1].cbias[code - 1];
+        }
 
-        /* correct phase bias (cyc) */
-        obs[i].L[j]-=nav->ssr[obs[i].sat-1].pbias[code-1]/lam;
     }
+    trace(2, "pbias corrected\n");
 }
 /* periodic command ----------------------------------------------------------*/
 static void periodic_cmd(int cycle, const char *cmd, stream_t *stream)
@@ -621,11 +641,13 @@ static void *rtksvrthread(void *arg)
             for (j=0;j<svr->obs[1][0].n&&obs.n<MAXOBS*2;j++) {
                 obs.data[obs.n++]=svr->obs[1][0].data[j];
             }
-            /* carrier phase bias correction */
-            if (!strstr(svr->rtk.opt.pppopt,"-DIS_FCB")) {
-                // TODO
-                corr_phase_bias(obs.data,obs.n,&svr->nav);
-            }
+            // /* carrier phase bias correction */
+            // if (!strstr(svr->rtk.opt.pppopt,"-DIS_FCB")) {
+            //     // TODO
+            //     corr_phase_bias(obs.data,obs.n,&svr->nav);
+            // }
+
+            corr_phase_bias_ssr(obs.data,obs.n,&svr->nav);
 
             publish_corrections(svr->nav.ssr);
             publish_measurement(obs.data, obs.n);

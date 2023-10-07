@@ -87,6 +87,8 @@ extern "C" {
 
 #define MAXFREQ     9                   /* max NFREQ */
 
+#define WL_ratio    1.0                 /* Ratio test for WL-amb */
+
 #define FREQL1      1.57542E9           /* L1/E1/B1  frequency (Hz) */
 #define FREQL2      1.22760E9           /* L2     frequency (Hz) */
 #define FREQE5b     1.20714E9           /* E5b    frequency (Hz) */
@@ -444,9 +446,10 @@ extern "C" {
 #define ARMODE_CONT 1                   /* AR mode: continuous */
 #define ARMODE_INST 2                   /* AR mode: instantaneous */
 #define ARMODE_FIXHOLD 3                /* AR mode: fix and hold */
-#define ARMODE_PPPAR_ILS 4              /* AR mode: PPP-AR ILS */
-#define ARMODE_WLNL 5                   /* AR mode: wide lane/narrow lane */
-#define ARMODE_TCAR 6                   /* AR mode: triple carrier ar */
+#define ARMODE_PPPAR 4                  /* AR mode: PPP-AR */
+#define ARMODE_PPPAR_ILS 5              /* AR mode: PPP-AR ILS */
+#define ARMODE_WLNL 6                   /* AR mode: wide lane/narrow lane */
+#define ARMODE_TCAR 7                   /* AR mode: triple carrier ar */
 
 #define GLO_ARMODE_OFF  0               /* GLO AR mode: off */
 #define GLO_ARMODE_ON 1                 /* GLO AR mode: on */
@@ -1024,7 +1027,10 @@ typedef struct {        /* solution type */
     double dtr[6];      /* receiver clock bias to time systems (s) */
     unsigned char type; /* type (0:xyz-ecef,1:enu-baseline) */
     unsigned char stat; /* solution status (SOLQ_???) */
-    unsigned char ns;   /* number of valid satellites */
+    unsigned char ns;   /* number of valid satellites */\
+    unsigned char gpsns;/* number of valid satellites */
+    unsigned char galns;/* number of valid satellites */
+    unsigned char bdsns;/* number of valid satellites */    
     float age;          /* age of differential (s) */
     float ratio;        /* AR ratio factor for valiation */
     float prev_ratio1;   /* previous initial AR ratio factor for validation */
@@ -1318,6 +1324,10 @@ typedef struct {        /* satellite status type */
 	double vari;
     double ion_brdc;
     double threObs[4];
+	double trop;  /*Tropospheric Delay*/
+	double iono;  /*Ionospheric Delay*/
+	double trop0;  /*previous Tropospheric Delay*/
+	double iono0;  /*prevoious Ionospheric Delay*/
 } ssat_t;
 
 typedef struct {        /* ambiguity control type */
@@ -1327,6 +1337,7 @@ typedef struct {        /* ambiguity control type */
     double LCv[4];      /* linear combination variance */
     int fixcnt;         /* fix count */
     char flags[MAXSAT]; /* fix flags */
+    double L4;          /* geometry-free L4=L1-L4 in meter */
 } ambc_t;
 
 typedef struct {        /* RTK control/result type */
@@ -1533,6 +1544,19 @@ typedef struct {        /* imu type */
     unsigned char buff[256]; /* imu data buffer */
 } imu_t;
 
+typedef struct {        /* augmentation msgs */
+	int valid;          /* imu data */
+	unsigned char sat;  /* satellite number */
+	double ion;         /* slant ion */
+	int N1;             /* integer N1 */
+	int N2;             /* integer N2 */
+	double upd1;        /* upd in L1 */
+	double upd2;        /* upd in L2 */
+	double res;         /* residual in L1 */
+	double L4;          /* corrected L4 */
+    int ref;            /* reference sat flag */
+} aug_t;
+
 /* ssr to osr */
 typedef struct {        /* observation data record */
     gtime_t time;       /* receiver sampling time (GPST) */
@@ -1581,6 +1605,7 @@ typedef void fatalfunc_t(const char *); /* fatal callback function type */
 /* global variables ----------------------------------------------------------*/
 extern const double chisqr[];        /* chi-sqr(n) table (alpha=0.001) */
 extern const double lam_carr[];      /* carrier wave length (m) {L1,L2,...} */
+extern const double lam_carr_BDS[];      /* carrier wave length (m) {L1,L2,...} */
 extern const double ura_value[];     /* user range accuracy translation table */
 extern const prcopt_t prcopt_default; /* default positioning options */
 extern const solopt_t solopt_default; /* default solution output options */
@@ -1812,6 +1837,8 @@ EXPORT int  satpos(gtime_t time, gtime_t teph, int sat, int ephopt,
                    int *svh);
 EXPORT void satposs(gtime_t time, const obsd_t *obs, int n, const nav_t *nav,
                     int sateph, double *rs, double *dts, double *var, int *svh);
+EXPORT void satpossDopp(gtime_t time, const obsd_t *obs, int n, const nav_t *nav,
+	int sateph, double *rs, double *dts, double *var, int *svh);
 EXPORT void satseleph(int sys, int sel);
 EXPORT void readsp3(const char *file, nav_t *nav, int opt);
 EXPORT int  readsap(const char *file, gtime_t time, nav_t *nav);

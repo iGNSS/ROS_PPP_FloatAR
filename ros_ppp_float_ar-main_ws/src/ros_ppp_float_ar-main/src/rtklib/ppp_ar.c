@@ -227,11 +227,11 @@ static void average_LC(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
 		}
 
 		/* remove obs when data is lost */
-		jj=(sys&(SYS_GAL|SYS_SBS|SYS_CMP))?2:1;
+		jj=(sys&(SYS_GAL|SYS_SBS|SYS_BDS))?2:1;
 		if(!P[0]||!P[jj]||!L[0]||!L[jj]) index=1;
 
         /* BDS2 code pseudorange multipath*/
-        if (sys == SYS_CMP) {
+        if (sys == SYS_BDS) {
             BDmultipath(obs+i, azel[1+2*i], dmp);
             P[0] += dmp[0];
             P[jj] += dmp[jj];
@@ -242,7 +242,7 @@ static void average_LC(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
         P[0]-=C2*nav->cbias[obs[i].sat-1][0];
         P[jj]+=C1*nav->cbias[obs[i].sat-1][0];
         /* triple-freq carrier and code LC (m) */
-        if(sys!=SYS_CMP){
+        if(sys!=SYS_BDS){
             LC1=L_LC(1,-1, 0,obs[i].L)-P_LC(1,1,0,P);// MW Combination
 		    LC2=L_LC(1,0, -1,obs[i].L)-P_LC(1,0,1,P);// L1/L5 for galileo
         }
@@ -258,7 +258,7 @@ static void average_LC(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
         
         /* measurement noise variance (m) */
 		eratio=rtk->opt.eratio[0];
-        if(sys!=SYS_CMP){
+        if(sys!=SYS_BDS){
             var1=var_LC(1,1,0,sig*eratio);//sig*rtk->opt.eratio[0]
 		    var2=var_LC(1,0,1,sig*eratio);// add L1/L5 for galileo
            //var2=var_LC(0,1,1,sig*eratio);//sig*rtk->opt.eratio[0]
@@ -338,7 +338,7 @@ static int fix_amb_WL(rtk_t *rtk, const nav_t *nav, int sat1, int sat2, int *NW)
 	else if(satsys(sat1,NULL)==SYS_GAL){
         lam_WL=lam_LC(1,0,-1);// support GAL
     }
-    else if(satsys(sat1,NULL)==SYS_CMP){
+    else if(satsys(sat1,NULL)==SYS_BDS){
         lam_WL=lam_LC_CMP(1,0,-1);// support BDS
     }
 		
@@ -348,7 +348,7 @@ static int fix_amb_WL(rtk_t *rtk, const nav_t *nav, int sat1, int sat2, int *NW)
     /* amb1->n can be set to 20 to constrain */
     if ((!amb1->n[0]||!amb2->n[0])&&satsys(sat1, NULL)==SYS_GPS) return 0;
 	if ((!amb1->n[1]||!amb2->n[1])&&satsys(sat1, NULL)==SYS_GAL) return 0;
-    if ((!amb1->n[1]||!amb2->n[1])&&satsys(sat1, NULL)==SYS_CMP) return 0;
+    if ((!amb1->n[1]||!amb2->n[1])&&satsys(sat1, NULL)==SYS_BDS) return 0;
 
 
     /* wide-lane ambiguity */
@@ -359,7 +359,7 @@ static int fix_amb_WL(rtk_t *rtk, const nav_t *nav, int sat1, int sat2, int *NW)
 	else if(satsys(sat1,NULL)==SYS_GAL){
         BW=(amb1->LC[1]-amb2->LC[1])/lam_WL;
     }
-    else if(satsys(sat1,NULL)==SYS_CMP){
+    else if(satsys(sat1,NULL)==SYS_BDS){
         BW=(amb1->LC[1]-amb2->LC[1])/lam_WL;
     }
 #else
@@ -374,7 +374,7 @@ static int fix_amb_WL(rtk_t *rtk, const nav_t *nav, int sat1, int sat2, int *NW)
     else if(satsys(sat1,NULL)==SYS_GAL){
         vW=(amb1->LCv[1]/amb1->n[1]+amb2->LCv[1]/amb2->n[1])/SQR(lam_WL);
     }
-    else if(satsys(sat1,NULL)==SYS_CMP){
+    else if(satsys(sat1,NULL)==SYS_BDS){
         vW=(amb1->LCv[1]/amb1->n[1]+amb2->LCv[1]/amb2->n[1])/SQR(lam_WL);
     }
     /* validation of integer wide-lane ambigyity */
@@ -581,7 +581,7 @@ static int ppp_amb_IFLAM_PAR(rtk_t *rtk, const nav_t *nav, int m, int n, int *sa
 		    {lamN=lam_LC(1,1,0);lamW=lam_LC(1,-1,0);}
 		    else if(satsys(sat1[i],NULL)==SYS_GAL) // support galileo
 		    {lamN=lam_LC(1,0,1);lamW=lam_LC(1,0,-1);}
-            else if(satsys(sat1[i],NULL)==SYS_CMP) // support BDS
+            else if(satsys(sat1[i],NULL)==SYS_BDS) // support BDS
 		    {lamN=lam_LC_CMP(1,0,1);lamW=lam_LC_CMP(1,0,-1);}
 		
 		    j=IB(sat1[i],&rtk->opt);
@@ -661,7 +661,7 @@ static int ppp_amb_IFLAM_ELEPAR(rtk_t *rtk, const nav_t *nav, int m, int n, int 
 		    {lamN=lam_LC(1,1,0);lamW=lam_LC(1,-1,0);}
 		    else if(satsys(sat1[i],NULL)==SYS_GAL) // support galileo
 		    {lamN=lam_LC(1,0,1);lamW=lam_LC(1,0,-1);}
-            else if(satsys(sat1[i],NULL)==SYS_CMP) // support BDS
+            else if(satsys(sat1[i],NULL)==SYS_BDS) // support BDS
 		    {lamN=lam_LC_CMP(1,0,1);lamW=lam_LC_CMP(1,0,-1);}
 		
 		    j=IB(sat1[i],&rtk->opt);
@@ -713,8 +713,8 @@ static int fix_amb_ILS(rtk_t *rtk, const obsd_t *obs, int nn,const nav_t *nav, i
 		 {lam2=lam_carr[1];lam_NL=lam_LC(1,1,0);}
 		 else if(satsys(sat1[i],NULL)==SYS_GAL) 
 		 {lam2=lam_carr[2];lam_NL=lam_LC(1,0,1);}
-         else if(satsys(sat1[i],NULL)==SYS_CMP)
-		 {lam1=lam_carr_CMP[0];lam2=lam_carr_CMP[2];lam_NL=lam_LC_CMP(1,0,1);}
+         else if(satsys(sat1[i],NULL)==SYS_BDS)
+		 {lam1=lam_carr_BDS[0];lam2=lam_carr_BDS[2];lam_NL=lam_LC_CMP(1,0,1);}
     
          C1= SQR(lam2)/(SQR(lam2)-SQR(lam1));
          C2=-SQR(lam1)/(SQR(lam2)-SQR(lam1));
@@ -791,8 +791,8 @@ static int fix_amb_ILS(rtk_t *rtk, const obsd_t *obs, int nn,const nav_t *nav, i
 		 {lam2=lam_carr[1];lam_NL=lam_LC(1,1,0);}
 		 else if(satsys(sat1[i],NULL)==SYS_GAL) // support GAL
 		 {lam2=lam_carr[2];lam_NL=lam_LC(1,0,1);}
-         else if(satsys(sat1[i],NULL)==SYS_CMP) // support BDS
-		 {lam1= lam_carr_CMP[0];lam2=lam_carr_CMP[2];lam_NL=lam_LC_CMP(1,0,1);}
+         else if(satsys(sat1[i],NULL)==SYS_BDS) // support BDS
+		 {lam1= lam_carr_BDS[0];lam2=lam_carr_BDS[2];lam_NL=lam_LC_CMP(1,0,1);}
 
 		 C1= SQR(lam2)/(SQR(lam2)-SQR(lam1));
          C2=-SQR(lam1)/(SQR(lam2)-SQR(lam1));
@@ -831,9 +831,9 @@ extern int pppamb(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
                   const double *azel,int *exc)
 {
 #if 0
-		const int sys[] = {SYS_GPS | SYS_QZS,SYS_GAL,SYS_CMP,0};
+		const int sys[] = {SYS_GPS | SYS_QZS,SYS_GAL,SYS_BDS,0};
 #else
-	    const int sys[] = {SYS_GPS,SYS_GAL,SYS_CMP,0};
+	    const int sys[] = {SYS_GPS,SYS_GAL,SYS_BDS,0};
 #endif
     double elmask,el[MAXOBS],fcb[MAXOBS]={0.0},lam_WL=0.0,BW[MAXOBS]={0.0};
     double sat_nlfcb;

@@ -188,6 +188,9 @@ const double lam_carr[MAXFREQ]={ /* carrier wave length (m) */
 	CLIGHT/FREQL1,CLIGHT/FREQL2,CLIGHT/FREQL5,CLIGHT/FREQE6,
     CLIGHT/FREQE5ab,CLIGHT/FREQs
 };
+const double lam_carr_BDS[3]={ /* carrier wave length (m) */
+    CLIGHT/FREQ1_CMP,CLIGHT/FREQ2_CMP,CLIGHT/FREQ3_CMP
+};
 const prcopt_t prcopt_default={ /* defaults processing options */
     PMODE_SINGLE,0,2,SYS_GPS,   /* mode,soltype,nf,navsys */
     15.0*D2R,{{0,0}},           /* elmin,snrmask */
