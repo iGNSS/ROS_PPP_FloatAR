@@ -321,42 +321,42 @@ static int inputobs(obsd_t *obs, int solq, const prcopt_t *popt)
     return n;
 }
 /* carrier-phase bias correction by fcb --------------------------------------*/
-static void corr_phase_bias_fcb(obsd_t *obs, int n, const nav_t *nav)
-{
-    int i,j,k;
+// static void corr_phase_bias_fcb(obsd_t *obs, int n, const nav_t *nav)
+// {
+//     int i,j,k;
     
-    for (i=0;i<nav->nf;i++) {
-        if (timediff(nav->fcb[i].te,obs[0].time)<-1E-3) continue;
-        if (timediff(nav->fcb[i].ts,obs[0].time)> 1E-3) break;
-        for (j=0;j<n;j++) {
-            for (k=0;k<NFREQ;k++) {
-                if (obs[j].L[k]==0.0) continue;
-                obs[j].L[k]-=nav->fcb[i].bias[obs[j].sat-1][k];
-            }
-        }
-        return;
-    }
-}
-/* carrier-phase bias correction by ssr --------------------------------------*/
-static void corr_phase_bias_ssr(obsd_t *obs, int n, const nav_t *nav)
-{
-    double lam;
-    int i,j,code;
+//     for (i=0;i<nav->nf;i++) {
+//         if (timediff(nav->fcb[i].te,obs[0].time)<-1E-3) continue;
+//         if (timediff(nav->fcb[i].ts,obs[0].time)> 1E-3) break;
+//         for (j=0;j<n;j++) {
+//             for (k=0;k<NFREQ;k++) {
+//                 if (obs[j].L[k]==0.0) continue;
+//                 obs[j].L[k]-=nav->fcb[i].bias[obs[j].sat-1][k];
+//             }
+//         }
+//         return;
+//     }
+// }
+// /* carrier-phase bias correction by ssr --------------------------------------*/
+// static void corr_phase_bias_ssr(obsd_t *obs, int n, const nav_t *nav)
+// {
+//     double lam;
+//     int i,j,code;
     
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < NFREQ; j++) {
+//     for (i = 0; i < n; i++) {
+//         for (j = 0; j < NFREQ; j++) {
 
-            if (!(code = obs[i].code[j])) continue;
-            if ((lam = nav->lam[obs[i].sat - 1][j]) == 0.0) continue;
+//             if (!(code = obs[i].code[j])) continue;
+//             if ((lam = nav->lam[obs[i].sat - 1][j]) == 0.0) continue;
 
-            /* correct phase bias (cyc) */
-            obs[i].L[j] -= nav->bia[obs[i].sat - 1].lBias[obs[i].code[j] - 1] / lam;
-            obs[i].P[j] -= nav->bia[obs[i].sat - 1].cBias[obs[i].code[j] - 1];
-        }
+//             /* correct phase bias (cyc) */
+//             obs[i].L[j] -= nav->bia[obs[i].sat - 1].lBias[obs[i].code[j] - 1] / lam;
+//             obs[i].P[j] -= nav->bia[obs[i].sat - 1].cBias[obs[i].code[j] - 1];
+//         }
 
-    }
-    trace(2, "pbias corrected\n");
-}
+//     }
+//     trace(2, "pbias corrected\n");
+// }
 /* process positioning -------------------------------------------------------*/
 static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt,
                     int mode)
@@ -386,7 +386,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt,
         if (n<=0) continue;
         
         /* carrier-phase bias correction */
-        corr_phase_bias_ssr(obs,n,&navs);
+        // corr_phase_bias_ssr(obs,n,&navs);
 
         /* disable L2 */
 #if 0
@@ -1045,7 +1045,7 @@ static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
         setpcv(obss.n>0?obss.data[0].time:timeget(),&popt_,&navs,&pcvss,&pcvsr,
                stas);
     }
-	/*Êä³öÎÀÐÇÌìÏßÏàÎ»»ò½ÓÊÕ»úÌìÏßÏàÎ»PCO*/
+	/*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»PCO*/
 	//for (s=0;s<pcvsr.n;s++)
 	//{
 	//	if (!strcmp((pcvsr.pcv+s)->type,"LEIAR25.R4      LEIT"))//(pcvss.pcv+s)->sat>=60&&(pcvss.pcv+s)->sat<=95

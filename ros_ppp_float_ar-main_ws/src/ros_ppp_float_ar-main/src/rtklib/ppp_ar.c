@@ -330,6 +330,7 @@ static int fix_amb_WL(rtk_t *rtk, const nav_t *nav, int sat1, int sat2, int *NW)
     double BW=0.0,vW=0.0,lam_WL=0.0;
     char id[64];
     char idd[64];
+    char str[80];
     satno2id(sat1, id); satno2id(sat2, idd);
     
 	if(satsys(sat1, NULL)==SYS_GPS){
@@ -381,6 +382,8 @@ static int fix_amb_WL(rtk_t *rtk, const nav_t *nav, int sat1, int sat2, int *NW)
     int WLfixflag = (fabs(*NW - BW) <= rtk->opt.thresar[2] && conffunc(*NW, BW, sqrt(vW)) >= rtk->opt.thresar[1]);
     if (WLfixflag == 0) {
         trace(2, "WL fix error, fabs=%f, conffunc=%f %s %s \n)", fabs(*NW - BW), conffunc(*NW, BW, sqrt(vW)), id ,idd);
+        sprintf(str,"WL fix error, fabs=%f, conffunc=%f %s %s \n)", fabs(*NW - BW), conffunc(*NW, BW, sqrt(vW)), id ,idd);
+        puts(str);
     }
 
     return WLfixflag;
@@ -803,7 +806,7 @@ static int fix_amb_ILS(rtk_t *rtk, const obsd_t *obs, int nn,const nav_t *nav, i
     stat=fix_sol(rtk,sat1,sat2,NC,m-del);
     trace(2, "fix success! *%d%5.0f%3.0f%3.0f%3.0f%3.0f%6.2f%4d%4d%4d\n", stat,ep[0], ep[1], ep[2], ep[3], ep[4], ep[5], m - del, m, n);
     
-	free(B1); free(N1); free(D); free(E); free(Q); free(NC); free(NN1);
+    free(B1); free(N1); free(D); free(E); free(Q); free(NC); free(NN1);
     
     return stat;
 }
@@ -963,6 +966,11 @@ extern int pppamb(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
         stat=fix_amb_ROUND(rtk,sat1,sat2,NW,ns);
     }
     else if (rtk->opt.modear==ARMODE_PPPAR_ILS) {
+        char str1[80],str2[80];
+        sprintf(str1,"WL fix ns= %d \n", ns);
+        sprintf(str2,"do Float-AR \n");
+        puts(str1);puts(str2);
+        
         stat=fix_amb_ILS(rtk,obs,n,nav,sat1,sat2,NW,ns);
     }
     free(sat1); free(sat2); free(NW);

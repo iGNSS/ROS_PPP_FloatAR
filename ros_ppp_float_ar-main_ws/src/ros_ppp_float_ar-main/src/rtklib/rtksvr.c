@@ -433,26 +433,27 @@ static void decodefile(rtksvr_t *svr, int index)
         rtksvrunlock(svr);
     }
 }
-// /* carrier-phase bias (fcb) correction ---------------------------------------*/
-// static void corr_phase_bias(obsd_t *obs, int n, const nav_t *nav)
-// {
-//     double lam;
-//     int i,j,code;
+/* carrier-phase bias (fcb) correction ---------------------------------------*/
+static void corr_phase_bias(obsd_t *obs, int n, const nav_t *nav)
+{
+    double lam;
+    int i,j,code;
 
-//     for (i=0;i<n;i++) for (j=0;j<NFREQ;j++) {
+    for (i=0;i<n;i++) for (j=0;j<NFREQ;j++) {
 
-//         if (!(code=obs[i].code[j])) continue;
-//         if ((lam=nav->lam[obs[i].sat-1][j])==0.0) continue;
+        if (!(code=obs[i].code[j])) continue;
+        if ((lam=nav->lam[obs[i].sat-1][j])==0.0) continue;
 
-//         /* correct phase bias (cyc) */
-//         obs[i].L[j]-=nav->ssr[obs[i].sat-1].pbias[code-1]/lam;
-//     }
-// }
+        /* correct phase bias (cyc) */
+        obs[i].L[j]-=nav->ssr[obs[i].sat-1].pbias[code-1]/lam;
+    }
+}
 /* carrier-phase bias correction by ssr --------------------------------------*/
 static void corr_phase_bias_ssr(obsd_t *obs, int n, const nav_t *nav)
 {
     double lam;
     int i,j,code;
+    char str[80];
     
     for (i = 0; i < n; i++) {
         for (j = 0; j < NFREQ; j++) {
@@ -467,6 +468,9 @@ static void corr_phase_bias_ssr(obsd_t *obs, int n, const nav_t *nav)
 
     }
     trace(2, "pbias corrected\n");
+    // sprintf(str,"pbias corrected\n");
+    // puts(str);
+
 }
 /* periodic command ----------------------------------------------------------*/
 static void periodic_cmd(int cycle, const char *cmd, stream_t *stream)

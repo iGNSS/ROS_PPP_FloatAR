@@ -213,15 +213,13 @@ extern "C" void publish_nmea(rtksvr_t *svr)
 
    if (svr->raw->cstrParsedGPGGA[0])
    {
-      printf("CALL ON: %s", svr->raw->cstrParsedGPGGA);
-      // xxx
+      //printf("CALL ON: %s", svr->raw->cstrParsedGPGGA);
       svr->raw->cstrParsedGPGGA[0] = 0x00;
    }
 
    if (svr->raw->cstrParsedGPRMC[0])
    {
-      printf("CALL ON: %s", svr->raw->cstrParsedGPRMC);
-      // xxx
+      //printf("CALL ON: %s", svr->raw->cstrParsedGPRMC);
       svr->raw->cstrParsedGPRMC[0] = 0x00;
    }
 }
@@ -329,8 +327,8 @@ extern "C" void publish_measurement(obsd_t *obs, int n)
 
 extern "C" void publish_ephemeris(eph_t *eph)
 {
-   std::cout << "ephem\n"
-             << std::endl;
+   // std::cout << "ephem\n"
+   //           << std::endl;
    gnss_comm::GnssEphemMsg ephem_msg;
 
    int week, sys;
@@ -389,8 +387,8 @@ extern "C" void publish_ephemeris(eph_t *eph)
 
 extern "C" void publish_glo_ephemeris(geph_t *geph)
 {
-   std::cout << "glo_ephem\n"
-             << std::endl;
+   // std::cout << "glo_ephem\n"
+   //           << std::endl;
    gnss_comm::GnssGloEphemMsg glo_ephem_msg;
 
    int week;
